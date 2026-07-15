@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>SSAFooD 음식점 지도</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Vue 3 -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      min-height: 100%;
+      background: #f8fafc;
+      font-family:
+        Pretendard,
+        -apple-system,
+        BlinkMacSystemFont,
+        "Segoe UI",
+        sans-serif;
+    }
+
+    [v-cloak] {
+      display: none;
+    }
+
+    .map-container {
+      width: 100%;
+      height: 650px;
+      min-height: 60vh;
+    }
+
+    .filter-scroll {
+      scrollbar-width: thin;
+      scrollbar-color: #cbd5e1 transparent;
+    }
+
+    .filter-scroll::-webkit-scrollbar {
+      height: 6px;
+    }
+
+    .filter-scroll::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .filter-scroll::-webkit-scrollbar-thumb {
+      border-radius: 9999px;
+      background: #cbd5e1;
+    }
+
+    .info-window {
+      width: 250px;
+      padding: 14px;
+      box-sizing: border-box;
+      font-family:
+        Pretendard,
+        Arial,
+        sans-serif;
+    }
+
+    .info-window-image {
+      width: 100%;
+      height: 120px;
+      margin-bottom: 10px;
+      border-radius: 12px;
+      object-fit: cover;
+    }
+
+    .info-window-no-image {
+      display: flex;
+      width: 100%;
+      height: 100px;
+      margin-bottom: 10px;
+      align-items: center;
+      justify-content: center;
+      border-radius: 12px;
+      background: #f1f5f9;
+      color: #94a3b8;
+      font-size: 12px;
+    }
+
+    .info-window-title {
+      display: block;
+      margin-bottom: 6px;
+      color: #0f172a;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 1.4;
+    }
+
+    .info-window-address {
+      margin: 0;
+      color: #64748b;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 768px) {
+      .map-container {
+        height: 520px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div
+    id="app"
+    v-cloak
+  >
+    <div
+      class="
+        mx-auto min-h-screen max-w-7xl
+        px-3 py-3 md:px-6 md:py-6 lg:px-8
+      "
+    >
+      <div
+        class="
+          min-h-[calc(100vh-24px)]
+          overflow-hidden rounded-[32px]
+          border border-slate-200
+          bg-white
+          shadow-[0_20px_60px_-20px_rgba(15,23,42,0.25)]
+        "
+      >
+        <!-- 네비게이션 -->
+        <header
+          class="
+            sticky top-0 z-50
+            border-b border-slate-100
+            bg-white/90 px-5 py-4
+            backdrop-blur md:px-8
+          "
+        >
+          <div
+            class="
+              flex flex-col gap-3
+              md:flex-row
+              md:items-center
+              md:justify-between
+            "
+          >
+            <a
+              href="/"
+              class="block"
+            >
+              <p
+                class="
+                  text-sm font-semibold uppercase
+                  tracking-[0.3em] text-orange-500
+                "
+              >
+                SSAFooD
+              </p>
+
+              <h1
+                class="
+                  text-2xl font-bold tracking-tight
+                  text-slate-900
+                "
+              >
+                광주·전라권 맛집 탐색
+              </h1>
+            </a>
+
+            <nav
+              class="
+                flex flex-wrap gap-2
+                rounded-full
+                border border-slate-200
+                bg-slate-50 p-1.5
+              "
+            >
+              <a
+                href="./index.html"
+                class="
+                  rounded-full px-4 py-2
+                  text-sm font-semibold
+                  text-slate-600 transition
+                  hover:bg-white
+                  hover:text-orange-500
+                "
+              >
+                홈
+              </a>
+
+              <a
+                href="./map.html"
+                class="
+                  rounded-full
+                  bg-orange-500
+                  px-4 py-2
+                  text-sm font-semibold
+                  text-white shadow-sm
+                "
+              >
+                지도
+              </a>
+
+              <a
+                href="./chat.html"
+                class="
+                  rounded-full px-4 py-2
+                  text-sm font-semibold
+                  text-slate-600 transition
+                  hover:bg-white
+                  hover:text-orange-500
+                "
+              >
+                AI 챗봇
+              </a>
+            </nav>
+          </div>
+        </header>
+
+        <!-- 메인 -->
+        <main class="p-4 md:p-8">
+          <section class="mb-6">
+            <p
+              class="
+                text-sm font-semibold
+                text-orange-500
+              "
+            >
+              광주·전라권 음식점 지도
+            </p>
+
+            <h2
+              class="
+                mt-1 text-2xl font-bold
+                tracking-tight text-slate-900
+              "
+            >
+              지역과 음식 분류로 맛집을 찾아보세요
+            </h2>
+
+            <p
+              class="
+                mt-2 text-sm
+                leading-6 text-slate-500
+              "
+            >
+              지역과 음식 종류를 선택하면 조건에 맞는
+              음식점 마커만 지도에 표시됩니다.
+            </p>
+          </section>
+
+          <!-- 지역 필터 -->
+          <section
+            class="
+              mb-4 rounded-[24px]
+              border border-slate-200
+              bg-white p-4 shadow-sm
+            "
+          >
+            <div
+              class="
+                mb-3 flex items-center
+                justify-between gap-3
+              "
+            >
+              <div>
+                <p
+                  class="
+                    text-sm font-bold
+                    text-slate-700
+                  "
+                >
+                  지역 선택
+                </p>
+
+                <p
+                  class="
+                    mt-1 text-xs
+                    text-slate-400
+                  "
+                >
+                  광역 코드와 시군구 코드를 함께 비교합니다.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                class="
+                  rounded-full border
+                  border-slate-200
+                  px-3 py-1.5
+                  text-xs font-semibold
+                  text-slate-500 transition
+                  hover:border-orange-300
+                  hover:text-orange-500
+                "
+                @click="resetFilters"
+              >
+                전체 초기화
+              </button>
+            </div>
+
+            <div
+              class="
+                filter-scroll
+                flex gap-2 overflow-x-auto
+                pb-2
+              "
+            >
+              <button
+                v-for="region in regions"
+                :key="
+                  region.name === '전체'
+                    ? 'all-region'
+                    : `${region.areacode}-${region.sigungucode}`
+                "
+                type="button"
+                class="
+                  shrink-0 rounded-full
+                  border px-4 py-2
+                  text-sm font-semibold
+                  transition
+                "
+                :class="
+                  isSelectedRegion(region)
+                    ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-orange-300 hover:text-orange-500'
+                "
+                @click="selectRegion(region)"
+              >
+                {{ region.name }}
+              </button>
+            </div>
+          </section>
+
+          <!-- 음식 분류 필터 -->
+          <section
+            class="
+              mb-4 rounded-[24px]
+              border border-slate-200
+              bg-white p-4 shadow-sm
+            "
+          >
+            <div class="mb-3">
+              <p
+                class="
+                  text-sm font-bold
+                  text-slate-700
+                "
+              >
+                음식 분류
+              </p>
+
+              <p
+                class="
+                  mt-1 text-xs
+                  text-slate-400
+                "
+              >
+                cat3 음식 분류 코드를 기준으로 필터링합니다.
+              </p>
+            </div>
+
+            <div
+              class="
+                filter-scroll
+                flex gap-2 overflow-x-auto
+                pb-2
+              "
+            >
+              <button
+                v-for="category in categories"
+                :key="category.code || 'all-category'"
+                type="button"
+                class="
+                  shrink-0 rounded-full
+                  border px-4 py-2
+                  text-sm font-semibold
+                  transition
+                "
+                :class="
+                  selectedCategory === category.code
+                    ? 'border-sky-500 bg-sky-500 text-white shadow-sm'
+                    : 'border-slate-200 bg-white text-slate-600 hover:border-sky-300 hover:text-sky-500'
+                "
+                @click="selectCategory(category)"
+              >
+                {{ category.name }}
+              </button>
+            </div>
+          </section>
+
+          <!-- 현재 선택 상태 -->
+          <section
+            class="
+              mb-4 flex flex-wrap
+              items-center gap-2
+            "
+          >
+            <span
+              class="
+                rounded-full
+                bg-orange-50 px-3 py-1.5
+                text-xs font-semibold
+                text-orange-600
+              "
+            >
+              지역:
+              {{ selectedRegionName || '전체' }}
+            </span>
+
+            <span
+              class="
+                rounded-full
+                bg-sky-50 px-3 py-1.5
+                text-xs font-semibold
+                text-sky-600
+              "
+            >
+              분류:
+              {{ selectedCategoryName || '전체' }}
+            </span>
+          </section>
+
+          <!-- 지도 -->
+          <section
+            class="
+              relative overflow-hidden
+              rounded-[28px]
+              border border-slate-300
+              bg-slate-100
+            "
+          >
+            <div
+              ref="mapContainer"
+              class="map-container"
+            ></div>
+
+            <!-- 음식점 개수 -->
+            <div
+              v-if="!isLoading && !errorMessage"
+              class="
+                absolute left-4 top-4 z-10
+                rounded-full bg-white/95
+                px-4 py-2
+                text-sm font-bold
+                text-orange-500
+                shadow-md backdrop-blur
+              "
+            >
+              음식점 {{ locationCount }}개
+            </div>
+
+            <!-- 현재 선택 지역 날씨 -->
+            <div
+              class="
+                absolute right-4 top-14 z-10
+                w-[220px] rounded-2xl
+                bg-white/95 p-4
+                shadow-lg backdrop-blur
+              "
+            >
+              <div
+                v-if="weatherLoading"
+                class="text-sm font-semibold text-slate-500"
+              >
+                날씨를 불러오는 중...
+              </div>
+
+              <div
+                v-else-if="weatherError"
+                class="text-sm text-red-500"
+              >
+                {{ weatherError }}
+              </div>
+
+              <div v-else class="flex items-center gap-3">
+                <img
+                  :src="weatherIconUrl"
+                  :alt="weather.description"
+                  class="h-16 w-16 shrink-0"
+                >
+
+                <div class="min-w-0">
+                  <p
+                    class="truncate text-xs font-bold text-orange-500"
+                  >
+                    {{ selectedRegionName || '광주' }} 날씨
+                  </p>
+
+                  <p class="mt-1 text-2xl font-bold text-slate-900">
+                    {{ weather.temperature }}℃
+                  </p>
+
+                  <p class="truncate text-xs text-slate-500">
+                    {{ weather.description }} · 습도 {{ weather.humidity }}%
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- 로딩 -->
+            <div
+              v-if="isLoading"
+              class="
+                absolute left-1/2 top-5 z-20
+                -translate-x-1/2
+                rounded-full bg-white/95
+                px-4 py-2
+                text-sm font-semibold
+                text-slate-600
+                shadow-lg
+              "
+            >
+              음식점 데이터를 불러오는 중입니다.
+            </div>
+
+            <!-- 결과 없음 -->
+            <div
+              v-if="
+                !isLoading
+                && !errorMessage
+                && locationCount === 0
+              "
+              class="
+                absolute bottom-5 left-1/2 z-20
+                -translate-x-1/2
+                rounded-2xl bg-white/95
+                px-5 py-3
+                text-center text-sm
+                font-semibold text-slate-600
+                shadow-lg
+              "
+            >
+              선택한 조건에 맞는 음식점이 없습니다.
+            </div>
+
+            <!-- 오류 -->
+            <div
+              v-if="errorMessage"
+              class="
+                absolute inset-0 z-30
+                flex items-center
+                justify-center
+                bg-slate-50/95 p-6
+                text-center
+              "
+            >
+              <div>
+                <p
+                  class="
+                    font-bold text-red-500
+                  "
+                >
+                  지도를 표시하지 못했습니다.
+                </p>
+
+                <p
+                  class="
+                    mt-2 text-sm
+                    text-slate-600
+                  "
+                >
+                  {{ errorMessage }}
+                </p>
+
+                <button
+                  type="button"
+                  class="
+                    mt-4 rounded-full
+                    bg-orange-500
+                    px-4 py-2
+                    text-sm font-semibold
+                    text-white
+                  "
+                  @click="initializeMap"
+                >
+                  다시 시도
+                </button>
+              </div>
+            </div>
+          </section>
+        </main>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const {
+      createApp,
+      computed,
+      onBeforeUnmount,
+      onMounted,
+      ref,
+    } = Vue
+
+    createApp({
+      setup() {
+
+        const KAKAO_JAVASCRIPT_KEY =
+          'b612f88d25ef18235da5e59000cddebb'
+
+        const API_BASE_URL =
+          'http://192.168.0.10:8000'
+
+        const mapContainer = ref(null)
+
+        const isLoading = ref(true)
+        const errorMessage = ref('')
+        const locationCount = ref(0)
+
+        const weatherLoading = ref(true)
+        const weatherError = ref('')
+        const weather = ref({
+          temperature: '--',
+          feels_like: '--',
+          humidity: '--',
+          description: '',
+          icon: '01d',
+        })
+
+        const selectedRegion = ref({
+          name: '전체',
+          areacode: '',
+          sigungucode: '',
+          latitude: 35.1595,
+          longitude: 126.8526,
+        })
+
+        const selectedCategory = ref('')
+
+        const regions = [
+          {
+            name: '전체',
+            areacode: '',
+            sigungucode: '',
+            latitude: 35.1595,
+            longitude: 126.8526,
+          },
+
+          {
+            name: '광주 광산구',
+            areacode: '5',
+            sigungucode: '1',
+            latitude: 35.1395,
+            longitude: 126.7937,
+          },
+          {
+            name: '광주 남구',
+            areacode: '5',
+            sigungucode: '2',
+            latitude: 35.1330,
+            longitude: 126.9024,
+          },
+          {
+            name: '광주 동구',
+            areacode: '5',
+            sigungucode: '3',
+            latitude: 35.1461,
+            longitude: 126.9231,
+          },
+          {
+            name: '광주 북구',
+            areacode: '5',
+            sigungucode: '4',
+            latitude: 35.1741,
+            longitude: 126.9120,
+          },
+          {
+            name: '광주 서구',
+            areacode: '5',
+            sigungucode: '5',
+            latitude: 35.1520,
+            longitude: 126.8895,
+          },
+
+          {
+            name: '전북 전주',
+            areacode: '37',
+            sigungucode: '12',
+            latitude: 35.8242,
+            longitude: 127.1480,
+          },
+          {
+            name: '전북 남원',
+            areacode: '37',
+            sigungucode: '4',
+            latitude: 35.4164,
+            longitude: 127.3904,
+          },
+
+          {
+            name: '전남 나주',
+            areacode: '38',
+            sigungucode: '6',
+            latitude: 35.0159,
+            longitude: 126.7108,
+          },
+          {
+            name: '전남 담양',
+            areacode: '38',
+            sigungucode: '7',
+            latitude: 35.3212,
+            longitude: 126.9882,
+          },
+          {
+            name: '전남 순천',
+            areacode: '38',
+            sigungucode: '11',
+            latitude: 34.9506,
+            longitude: 127.4872,
+          },
+          {
+            name: '전남 여수',
+            areacode: '38',
+            sigungucode: '13',
+            latitude: 34.7604,
+            longitude: 127.6622,
+          },
+        ]
+
+        const categories = [
+          {
+            name: '전체',
+            code: '',
+          },
+          {
+            name: '한식',
+            code: 'A05020100',
+          },
+          {
+            name: '양식',
+            code: 'A05020200',
+          },
+          {
+            name: '일식',
+            code: 'A05020300',
+          },
+          {
+            name: '중식',
+            code: 'A05020400',
+          },
+          {
+            name: '분식',
+            code: 'A05020500',
+          },
+          {
+            name: '패스트푸드',
+            code: 'A05020600',
+          },
+          {
+            name: '기타 외국식',
+            code: 'A05020700',
+          },
+          {
+            name: '바·주류',
+            code: 'A05020800',
+          },
+          {
+            name: '카페·전통찻집',
+            code: 'A05020900',
+          },
+        ]
+
+        const selectedRegionName = computed(() => {
+          return selectedRegion.value.name
+        })
+
+        const selectedCategoryName = computed(() => {
+          const category = categories.find(
+            item => item.code === selectedCategory.value
+          )
+
+          return category?.name || '전체'
+        })
+
+        let map = null
+        let clusterer = null
+        let markers = []
+        let openedInfoWindow = null
+
+        function loadKakaoMapSdk() {
+          return new Promise((resolve, reject) => {
+            if (
+              !KAKAO_JAVASCRIPT_KEY
+              || KAKAO_JAVASCRIPT_KEY.includes('여기에_')
+            ) {
+              reject(
+                new Error(
+                  'map.html 안의 카카오 JavaScript 키를 설정하세요.'
+                )
+              )
+              return
+            }
+
+            if (window.kakao?.maps) {
+              window.kakao.maps.load(resolve)
+              return
+            }
+
+            const existingScript =
+              document.getElementById('kakao-map-sdk')
+
+            if (existingScript) {
+              existingScript.addEventListener(
+                'load',
+                () => {
+                  window.kakao.maps.load(resolve)
+                },
+                { once: true }
+              )
+
+              existingScript.addEventListener(
+                'error',
+                () => {
+                  reject(
+                    new Error(
+                      '카카오 지도 SDK를 불러오지 못했습니다.'
+                    )
+                  )
+                },
+                { once: true }
+              )
+
+              return
+            }
+
+            const script =
+              document.createElement('script')
+
+            script.id = 'kakao-map-sdk'
+            script.async = true
+
+            script.src =
+              'https://dapi.kakao.com/v2/maps/sdk.js'
+              + `?appkey=${encodeURIComponent(
+                KAKAO_JAVASCRIPT_KEY
+              )}`
+              + '&autoload=false'
+              + '&libraries=clusterer'
+
+            script.onload = () => {
+              window.kakao.maps.load(resolve)
+            }
+
+            script.onerror = () => {
+              reject(
+                new Error(
+                  '카카오 지도 SDK를 불러오지 못했습니다.'
+                )
+              )
+            }
+
+            document.head.appendChild(script)
+          })
+        }
+
+        function escapeHtml(value) {
+          const text = String(value ?? '')
+
+          const replacements = {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;',
+          }
+
+          return text.replace(
+            /[&<>"']/g,
+            character => replacements[character]
+          )
+        }
+
+        function createInfoWindowContent(location) {
+          const title =
+            escapeHtml(
+              location.title || '이름 없음'
+            )
+
+          const address =
+            escapeHtml(
+              location.address
+              || '주소 정보가 없습니다.'
+            )
+
+          const imageUrl =
+            location.image_url
+              ? escapeHtml(location.image_url)
+              : ''
+
+          const categoryName =
+            categories.find(
+              category =>
+                category.code
+                === location.category_code
+            )?.name || '분류 정보 없음'
+
+          const imageHtml = imageUrl
+            ? `
+              <img
+                src="${imageUrl}"
+                alt="${title}"
+                class="info-window-image"
+                onerror="
+                  this.style.display='none';
+                  this.nextElementSibling.style.display='flex';
+                "
+              >
+
+              <div
+                class="info-window-no-image"
+                style="display: none;"
+              >
+                이미지 없음
+              </div>
+            `
+            : `
+              <div class="info-window-no-image">
+                이미지 없음
+              </div>
+            `
+
+          return `
+            <div class="info-window">
+              ${imageHtml}
+
+              <strong class="info-window-title">
+                ${title}
+              </strong>
+
+              <p
+                style="
+                  margin: 0 0 6px;
+                  color: #f97316;
+                  font-size: 12px;
+                  font-weight: 700;
+                "
+              >
+                ${escapeHtml(categoryName)}
+              </p>
+
+              <p class="info-window-address">
+                ${address}
+              </p>
+            </div>
+          `
+        }
+
+        function closeInfoWindow() {
+          if (!openedInfoWindow) {
+            return
+          }
+
+          openedInfoWindow.close()
+          openedInfoWindow = null
+        }
+
+        function clearMarkers() {
+          closeInfoWindow()
+
+          if (clusterer) {
+            clusterer.clear()
+          }
+
+          markers.forEach(marker => {
+            marker.setMap(null)
+          })
+
+          markers = []
+        }
+
+        function createMarkers(locations) {
+          const kakao = window.kakao
+
+          clearMarkers()
+
+          const validLocations =
+            locations.filter(location => {
+              const latitude =
+                Number(location.latitude)
+
+              const longitude =
+                Number(location.longitude)
+
+              return (
+                Number.isFinite(latitude)
+                && Number.isFinite(longitude)
+              )
+            })
+
+          locationCount.value =
+            validLocations.length
+
+          markers =
+            validLocations.map(location => {
+              const position =
+                new kakao.maps.LatLng(
+                  Number(location.latitude),
+                  Number(location.longitude)
+                )
+
+              const marker =
+                new kakao.maps.Marker({
+                  position,
+                  title:
+                    location.title || '이름 없음',
+                })
+
+              const infoWindow =
+                new kakao.maps.InfoWindow({
+                  content:
+                    createInfoWindowContent(location),
+                  removable: true,
+                })
+
+              kakao.maps.event.addListener(
+                marker,
+                'click',
+                () => {
+                  closeInfoWindow()
+
+                  infoWindow.open(
+                    map,
+                    marker
+                  )
+
+                  openedInfoWindow =
+                    infoWindow
+                }
+              )
+
+              return marker
+            })
+
+          clusterer =
+            new kakao.maps.MarkerClusterer({
+              map,
+              averageCenter: true,
+              minLevel: 6,
+              gridSize: 60,
+            })
+
+          clusterer.addMarkers(markers)
+
+          fitMapToMarkers(validLocations)
+        }
+
+        function fitMapToMarkers(locations) {
+          if (!map || locations.length === 0) {
+            return
+          }
+
+          const bounds =
+            new window.kakao.maps.LatLngBounds()
+
+          locations.forEach(location => {
+            bounds.extend(
+              new window.kakao.maps.LatLng(
+                Number(location.latitude),
+                Number(location.longitude)
+              )
+            )
+          })
+
+          map.setBounds(bounds)
+
+          if (locations.length === 1) {
+            map.setLevel(4)
+          }
+        }
+
+async function getLocations(filters = {}) {
+  const params = new URLSearchParams()
+
+  if (filters.areacode) {
+    params.set('areacode', filters.areacode)
+  }
+
+  if (filters.sigungucode) {
+    params.set('sigungucode', filters.sigungucode)
+  }
+
+  if (filters.cat3) {
+    params.set('cat3', filters.cat3)
+  }
+
+  const queryString = params.toString()
+
+  const url = queryString
+    ? `${API_BASE_URL}/api/locations?${queryString}`
+    : `${API_BASE_URL}/api/locations`
+
+  try {
+    const response = await fetch(url)
+
+    if (!response.ok) {
+      console.warn(
+        `음식점 API 오류: ${response.status}`
+      )
+
+      return []
+    }
+
+    const data = await response.json()
+
+    return Array.isArray(data)
+      ? data
+      : []
+  } catch (error) {
+    console.warn(
+      '백엔드에 연결할 수 없어 마커 없이 지도를 표시합니다.',
+      error,
+    )
+
+    return []
+  }
+}
+
+ async function loadLocations() {
+  try {
+    isLoading.value = true
+    errorMessage.value = ''
+
+    const locations = await getLocations({
+      areacode:
+        selectedRegion.value.areacode,
+      sigungucode:
+        selectedRegion.value.sigungucode,
+      cat3:
+        selectedCategory.value,
+    })
+
+    createMarkers(locations)
+  } catch (error) {
+    console.error(error)
+
+    clearMarkers()
+    locationCount.value = 0
+
+    // API 실패로 지도 전체를 가리지 않음
+    errorMessage.value = ''
+  } finally {
+    isLoading.value = false
+  }
+}
+
+        const weatherIconUrl = computed(() => {
+          return `https://openweathermap.org/img/wn/${weather.value.icon}@2x.png`
+        })
+
+        async function loadWeather(region = selectedRegion.value) {
+          weatherLoading.value = true
+          weatherError.value = ''
+
+          const lat = region.latitude ?? 35.1595
+          const lon = region.longitude ?? 126.8526
+
+          try {
+            const response = await fetch(
+              `${API_BASE_URL}/api/weather?lat=${lat}&lon=${lon}`
+            )
+
+            if (!response.ok) {
+              const errorData = await response.json().catch(() => ({}))
+              throw new Error(
+                errorData.detail || '날씨 정보를 불러오지 못했습니다.'
+              )
+            }
+
+            weather.value = await response.json()
+          } catch (error) {
+            console.warn('날씨 정보 오류:', error)
+            weatherError.value = '날씨 조회 실패'
+          } finally {
+            weatherLoading.value = false
+          }
+        }
+
+        function isSelectedRegion(region) {
+          return (
+            selectedRegion.value.areacode
+              === region.areacode
+            && selectedRegion.value.sigungucode
+              === region.sigungucode
+          )
+        }
+
+        async function selectRegion(region) {
+          selectedRegion.value = {
+            ...region,
+          }
+
+          await Promise.all([
+            loadLocations(),
+            loadWeather(region),
+          ])
+        }
+
+        async function selectCategory(category) {
+          selectedCategory.value =
+            category.code
+
+          await loadLocations()
+        }
+
+        async function resetFilters() {
+          selectedRegion.value = {
+            name: '전체',
+            areacode: '',
+            sigungucode: '',
+            latitude: 35.1595,
+            longitude: 126.8526,
+          }
+
+          selectedCategory.value = ''
+
+          await loadLocations()
+        }
+
+        async function initializeMap() {
+          try {
+            isLoading.value = true
+            errorMessage.value = ''
+
+            await loadKakaoMapSdk()
+
+            const kakao = window.kakao
+
+            const initialPosition =
+              new kakao.maps.LatLng(
+                35.1595,
+                126.8526
+              )
+
+            if (!map) {
+              map =
+                new kakao.maps.Map(
+                  mapContainer.value,
+                  {
+                    center: initialPosition,
+                    level: 9,
+                  }
+                )
+
+              const zoomControl =
+                new kakao.maps.ZoomControl()
+
+              map.addControl(
+                zoomControl,
+                kakao.maps.ControlPosition.RIGHT
+              )
+
+              const mapTypeControl =
+                new kakao.maps.MapTypeControl()
+
+              map.addControl(
+                mapTypeControl,
+                kakao.maps.ControlPosition.TOPRIGHT
+              )
+
+              kakao.maps.event.addListener(
+                map,
+                'click',
+                () => {
+                  closeInfoWindow()
+                }
+              )
+            }
+
+            await Promise.all([
+              loadLocations(),
+              loadWeather(selectedRegion.value),
+            ])
+          } catch (error) {
+            console.error(error)
+
+            errorMessage.value =
+              error instanceof Error
+                ? error.message
+                : '지도를 불러오는 중 오류가 발생했습니다.'
+          } finally {
+            isLoading.value = false
+          }
+        }
+
+        function handleResize() {
+          if (!map) {
+            return
+          }
+
+          map.relayout()
+        }
+
+        onMounted(() => {
+          initializeMap()
+
+          window.addEventListener(
+            'resize',
+            handleResize
+          )
+        })
+
+        onBeforeUnmount(() => {
+          window.removeEventListener(
+            'resize',
+            handleResize
+          )
+
+          clearMarkers()
+
+          clusterer = null
+          map = null
+        })
+
+        return {
+          mapContainer,
+
+          regions,
+          categories,
+
+          isLoading,
+          errorMessage,
+          locationCount,
+
+          weatherLoading,
+          weatherError,
+          weather,
+          weatherIconUrl,
+
+          selectedRegion,
+          selectedCategory,
+          selectedRegionName,
+          selectedCategoryName,
+
+          isSelectedRegion,
+          selectRegion,
+          selectCategory,
+          resetFilters,
+          initializeMap,
+        }
+      },
+    }).mount('#app')
+  </script>
+</body>
+</html>
