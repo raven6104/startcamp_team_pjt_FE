@@ -549,6 +549,7 @@ const { createApp, ref, computed, onMounted } = Vue;
         createApp({
             setup() {
                 const API_BASE = "https://be-5861.onrender.com";
+                axios.get(`${API_BASE_URL}/api/restaurants`);
 
                 
                 // 데이터 상태 정의
@@ -790,7 +791,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 음식점 전체 가져오기
                 const fetchRestaurants = async () => {
                     try {
-                        const res = await axios.get(`${API_BASE}/restaurants`);
+                        const res = await axios.get(`${API_BASE_URL}/api/restaurants`);
                         restaurants.value = res.data;
                     } catch (err) {
                         console.error("음식점 로드 실패", err);
@@ -800,7 +801,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 음식점 선택
                 const selectRestaurant = async (content_id) => {
                     try {
-                        const detailRes = await axios.get(`${API_BASE}/restaurants/${content_id}`);
+                        const detailRes = await axios.get(`${API_BASE_URL}/api/restaurants/${content_id}`);
                         selectedRestaurant.value = detailRes.data;
                         activeReviewId.value = null;
                         fetchReviews(content_id);
@@ -812,7 +813,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 특정 음식점의 리뷰 조회
                 const fetchReviews = async (content_id) => {
                     try {
-                        const res = await axios.get(`${API_BASE}/restaurants/${content_id}/reviews`);
+                        const res = await axios.get(`${API_BASE_URL}/api/restaurants/${content_id}/reviews`);
                         reviews.value = res.data;
                     } catch (err) {
                         console.error("리뷰 로드 실패", err);
@@ -834,7 +835,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 조회수 1 증가
                 const increaseViews = async (review) => {
                     try {
-                        await axios.patch(`${API_BASE}/reviews/${review.post_id}/view`);
+                        await axios.patch(`${API_BASE_URL}/api/reviews/${review.post_id}/view`);
                         review.views = (Number(review.views) || 0) + 1;
                     } catch (err) {
                         console.error("조회수 증가 실패:", err);
@@ -844,7 +845,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 좋아요 누르기
                 const likeReview = async (review) => {
                     try {
-                        await axios.post(`${API_BASE}/reviews/${review.post_id}/like`);
+                        await axios.post(`${API_BASE_URL}/api/reviews/${review.post_id}/like`);
                         review.likes = (Number(review.likes) || 0) + 1;
                     } catch (err) {
                         alert("좋아요 반영에 실패했습니다.");
@@ -854,7 +855,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 리뷰 등록 제출
                 const submitReview = async () => {
                     try {
-                        await axios.post(`${API_BASE}/reviews`, {
+                        await axios.post(`${API_BASE_URL}/api/reviews`, {
                             content_id: selectedRestaurant.value.content_id,
                             ...newReview.value
                         });
@@ -885,7 +886,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 리뷰 수정 처리
                 const submitEditReview = async () => {
                     try {
-                        await axios.put(`${API_BASE}/reviews/${editReviewId.value}`, editReviewData.value);
+                        await axios.put(`${API_BASE_URL}/api/reviews/${editReviewId.value}`, editReviewData.value);
                         alert("리뷰가 수정되었습니다.");
                         isReviewEditModalOpen.value = false;
                         
@@ -910,7 +911,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 리뷰 삭제 처리
                 const submitDeleteReview = async () => {
                     try {
-                        await axios.delete(`${API_BASE}/reviews/${deleteReviewId.value}`, {
+                        await axios.delete(`${API_BASE_URL}/api/reviews/${deleteReviewId.value}`, {
                             data: { password: deleteReviewPassword.value }
                         });
                         alert("리뷰가 성공적으로 삭제되었습니다.");
@@ -933,7 +934,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 댓글 로드
                 const fetchComments = async (postId) => {
                     try {
-                        const res = await axios.get(`${API_BASE}/reviews/${postId}/comments`);
+                        const res = await axios.get(`${API_BASE_URL}/api/reviews/${postId}/comments`);
                         comments.value = res.data;
                     } catch (err) {
                         console.error("댓글 로딩 실패", err);
@@ -949,7 +950,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 댓글 등록 제출
                 const submitComment = async () => {
                     try {
-                        await axios.post(`${API_BASE}/comments`, {
+                        await axios.post(`${API_BASE_URL}/api/comments`, {
                             post_id: activeTargetPostIdForComment.value,
                             ...newComment.value
                         });
@@ -971,7 +972,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 댓글 수정 처리
                 const submitEditComment = async () => {
                     try {
-                        await axios.put(`${API_BASE}/comments/${editCommentId.value}`, editCommentData.value);
+                        await axios.put(`${API_BASE_URL}/api/comments/${editCommentId.value}`, editCommentData.value);
                         alert("댓글이 수정되었습니다.");
                         isCommentEditModalOpen.value = false;
                         fetchComments(activeReviewId.value);
@@ -994,7 +995,7 @@ const { createApp, ref, computed, onMounted } = Vue;
                 // 댓글 삭제 처리
                 const submitDeleteComment = async () => {
                     try {
-                        await axios.delete(`${API_BASE}/comments/${deleteCommentId.value}`, {
+                        await axios.delete(`${API_BASE_URL}/api/comments/${deleteCommentId.value}`, {
                             data: { password: deleteCommentPassword.value }
                         });
                         alert("댓글이 삭제되었습니다.");
