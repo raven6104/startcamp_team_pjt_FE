@@ -973,38 +973,66 @@
           const url =
             `${API_BASE_URL}/api/restaurants`
 
+          console.log('[지도] 음식점 API 요청:', url)
+
           const response =
             await fetch(url, {
+              method: 'GET',
               headers: {
                 Accept: 'application/json',
               },
             })
 
           if (!response.ok) {
+            const errorText =
+              await response.text()
+
+            console.error(
+              '[지도] 음식점 API 오류:',
+              response.status,
+              errorText
+            )
+
             throw new Error(
               `음식점 데이터 조회 실패: ${response.status}`
             )
           }
 
-          const data =
+          const responseData =
             await response.json()
 
+          /*
+           * 백엔드가 배열을 바로 반환하는 경우와
+           * { restaurants: [...] } 형태로 반환하는 경우를
+           * 모두 지원합니다.
+           */
+          const data =
+            Array.isArray(responseData)
+              ? responseData
+              : responseData.restaurants
+
           if (!Array.isArray(data)) {
+            console.error(
+              '[지도] 예상하지 못한 API 응답:',
+              responseData
+            )
+
             throw new Error(
-              '음식점 API 응답 형식이 배열이 아닙니다.'
+              '음식점 API 응답 형식이 올바르지 않습니다.'
             )
           }
 
+          console.log(
+            `[지도] DB 음식점 ${data.length}개 수신`,
+            data.slice(0, 3)
+          )
+
           /*
-           * 백엔드 /api/restaurants 응답을
-           * 지도 코드에서 사용하는 공통 형태로 변환합니다.
+           * /api/restaurants 응답 필드를
+           * 지도에서 사용하는 필드명으로 변환합니다.
            *
-           * 백엔드 예상 필드:
-           * mapy=위도, mapx=경도, addr1=주소,
-           * firstimage=이미지, cat3=음식 분류
-           *
-           * /api/locations 형태도 함께 호환되도록
-           * latitude, longitude 등의 대체 필드도 허용합니다.
+           * mapy = 위도
+           * mapx = 경도
            */
           const normalizedLocations =
             data.map(item => ({
@@ -1032,41 +1060,68 @@
                 Number(
                   item.mapy
                   ?? item.latitude
+                  ?? item.lat
                 ),
               longitude:
                 Number(
                   item.mapx
                   ?? item.longitude
+                  ?? item.lng
                 ),
             }))
 
-          return normalizedLocations.filter(location => {
-            if (
-              filters.areacode
-              && location.areacode
-                !== String(filters.areacode)
-            ) {
-              return false
-            }
+          const filteredLocations =
+            normalizedLocations.filter(location => {
+              if (
+                filters.areacode
+                && location.areacode
+                  !== String(filters.areacode)
+              ) {
+                return false
+              }
 
-            if (
-              filters.sigungucode
-              && location.sigungucode
-                !== String(filters.sigungucode)
-            ) {
-              return false
-            }
+              if (
+                filters.sigungucode
+                && location.sigungucode
+                  !== String(filters.sigungucode)
+              ) {
+                return false
+              }
 
-            if (
-              filters.cat3
-              && location.category_code
-                !== filters.cat3
-            ) {
-              return false
-            }
+              if (
+                filters.cat3
+                && location.category_code
+                  !== filters.cat3
+              ) {
+                return false
+              }
 
-            return true
-          })
+              return true
+            })
+
+          const coordinateCount =
+            filteredLocations.filter(location => (
+              Number.isFinite(location.latitude)
+              && Number.isFinite(location.longitude)
+            )).length
+
+          console.log(
+            `[지도] 필터 결과 ${filteredLocations.length}개, `
+            + `유효 좌표 ${coordinateCount}개`
+          )
+
+          if (
+            filteredLocations.length > 0
+            && coordinateCount === 0
+          ) {
+            throw new Error(
+              'DB 음식점 데이터는 수신했지만 '
+              + 'mapx·mapy 좌표가 응답에 없습니다. '
+              + '백엔드 SELECT에 mapx와 mapy를 추가하세요.'
+            )
+          }
+
+          return filteredLocations
         }
 
         async function loadLocations() {
